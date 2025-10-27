@@ -48,8 +48,8 @@ fun MainScreen(
                 .weight(1f)
         ) {
             CodeEditor(
-                content = state.scriptContent,
-                onContentChange = { viewModel.updateScriptContent(it) },
+                textFieldValue = state.textFieldValue,
+                onTextFieldValueChange = { viewModel.updateTextFieldValue(it) },
                 enabled = !state.isRunning,
                 modifier = Modifier
                     .weight(1f)

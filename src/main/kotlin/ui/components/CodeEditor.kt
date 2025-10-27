@@ -3,7 +3,7 @@ package ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -15,18 +15,11 @@ import ui.theme.EditorBackground
 
 @Composable
 fun CodeEditor(
-    content: String,
-    onContentChange: (String) -> Unit,
+    textFieldValue: TextFieldValue,
+    onTextFieldValueChange: (TextFieldValue) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    var textFieldValue by remember { mutableStateOf(TextFieldValue(content)) }
-
-    LaunchedEffect(content) {
-        if (content != textFieldValue.text) {
-            textFieldValue = TextFieldValue(content)
-        }
-    }
 
     Box(
         modifier = modifier
@@ -35,10 +28,7 @@ fun CodeEditor(
     ) {
         BasicTextField(
             value = textFieldValue,
-            onValueChange = { newValue ->
-                textFieldValue = newValue
-                onContentChange(newValue.text)
-            },
+            onValueChange = onTextFieldValueChange,
             modifier = Modifier.fillMaxSize(),
             textStyle = CodeTextStyle.copy(color = CodeTextColor),
             enabled = enabled,

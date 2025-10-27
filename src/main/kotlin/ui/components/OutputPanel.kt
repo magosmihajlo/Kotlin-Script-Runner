@@ -65,8 +65,8 @@ private fun OutputLineItem(
     line: OutputLine,
     onErrorLineClick: (line: Int, column: Int) -> Unit
 ) {
-    val errorRegex = """.*:(\d+):(\d+):\s*error:.*""".toRegex()
-    val match = errorRegex.matchEntire(line.text)
+    val errorRegex = """Main\.kts:(\d+):(\d+):\s*error:""".toRegex()
+    val match = errorRegex.find(line.text)
 
     val textColor = when (line.type) {
         OutputType.STDOUT -> Color(0xFFA9B7C6)
@@ -74,7 +74,7 @@ private fun OutputLineItem(
         OutputType.SYSTEM -> Color(0xFF64B5F6)
     }
 
-    if (match != null && line.type == OutputType.STDERR) {
+    if (match != null) {
         val (lineNum, colNum) = match.destructured
         Text(
             text = line.text,
@@ -83,6 +83,7 @@ private fun OutputLineItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
+                    println("Clicked error! Line: $lineNum, Column: $colNum")
                     onErrorLineClick(lineNum.toInt(), colNum.toInt())
                 }
                 .padding(vertical = 2.dp)

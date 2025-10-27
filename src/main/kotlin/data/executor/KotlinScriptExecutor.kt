@@ -9,6 +9,8 @@ import domain.repository.ScriptFileManager
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class KotlinScriptExecutor(
     private val fileManager: ScriptFileManager
@@ -16,29 +18,32 @@ class KotlinScriptExecutor(
 
     private var currentProcess: Process? = null
     private var executionJob: Job? = null
+    private var currentTempDir: File? = null
 
     override suspend fun execute(
         scriptContent: String,
         onOutputLine: suspend (OutputLine) -> Unit
     ): ExecutionResult = withContext(Dispatchers.IO) {
 
-        val tempDir = createTempDir("kotlin_exec_", "")
-        val scriptFile = File(tempDir, "Main.kts")
-        scriptFile.writeText(scriptContent)
+        val scriptFile = fileManager.createTempScriptFile(scriptContent)
+        currentTempDir = scriptFile.parentFile
 
         try {
             val osName = System.getProperty("os.name").lowercase()
             val isWindows = osName.contains("win")
             val kotlinc = if (isWindows) "kotlinc.bat" else "kotlinc"
 
+            if (!isKotlincAvailable(kotlinc)) {
+                return@withContext ExecutionResult.Failure(
+                    ScriptError("kotlinc not found in PATH. Please install Kotlin compiler."),
+                    emptyList()
+                )
+            }
+
             onOutputLine(OutputLine("Running script...", OutputType.SYSTEM))
 
-            val runBuilder = ProcessBuilder(
-                kotlinc,
-                "-script",
-                scriptFile.absolutePath
-            )
-            runBuilder.redirectErrorStream(true)
+            val runBuilder = ProcessBuilder(kotlinc, "-script", scriptFile.absolutePath)
+            runBuilder.redirectErrorStream(false)
 
             currentProcess = runBuilder.start()
             val process = currentProcess ?: throw IllegalStateException("Process failed to start")
@@ -46,15 +51,16 @@ class KotlinScriptExecutor(
             val outputLines = mutableListOf<OutputLine>()
 
             executionJob = launch {
-                process.inputStream.bufferedReader().use { reader ->
-                    readStream(reader, OutputType.STDOUT, onOutputLine, outputLines)
-                }
+                launch { readStream(process.inputStream.bufferedReader(), OutputType.STDOUT, onOutputLine, outputLines) }
+                launch { readStream(process.errorStream.bufferedReader(), OutputType.STDERR, onOutputLine, outputLines) }
             }
 
             executionJob?.join()
-
             val exitCode = process.waitFor()
-            tempDir.deleteRecursively()
+
+            // Cleanup using fileManager
+            fileManager.cleanup(scriptFile)
+            currentTempDir?.deleteRecursively()
 
             if (exitCode == 0) {
                 ExecutionResult.Success(exitCode, outputLines)
@@ -63,13 +69,20 @@ class KotlinScriptExecutor(
                 ExecutionResult.Failure(error, outputLines)
             }
 
+        } catch (e: IOException) {
+            fileManager.cleanup(scriptFile)
+            scriptFile.parentFile.deleteRecursively()
+            return@withContext ExecutionResult.Failure(
+                ScriptError("Failed to start kotlinc: ${e.message}. Ensure kotlinc is installed and in PATH."),
+                emptyList()
+            )
 
         } catch (e: CancellationException) {
             currentProcess?.destroyForcibly()
-            tempDir.deleteRecursively()
+            scriptFile.parentFile.deleteRecursively()
             ExecutionResult.Cancelled
         } catch (e: Exception) {
-            tempDir.deleteRecursively()
+            scriptFile.parentFile.deleteRecursively()
             ExecutionResult.Failure(
                 ScriptError("Execution error: ${e.message}"),
                 emptyList()
@@ -77,6 +90,17 @@ class KotlinScriptExecutor(
         } finally {
             currentProcess = null
             executionJob = null
+            currentTempDir = null
+        }
+    }
+
+    private fun isKotlincAvailable(kotlinc: String): Boolean {
+        return try {
+            val process = ProcessBuilder(kotlinc, "-version").start()
+            process.waitFor(5, TimeUnit.SECONDS)
+            process.exitValue() == 0
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -92,6 +116,7 @@ class KotlinScriptExecutor(
             onOutputLine(outputLine)
         }
     }
+
 
     private fun parseError(outputLines: List<OutputLine>): ScriptError {
         val errorLine = outputLines.firstOrNull { it.type == OutputType.STDERR }

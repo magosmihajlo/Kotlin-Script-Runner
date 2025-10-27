@@ -26,7 +26,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-scripting-jvm")
     implementation("org.jetbrains.kotlin:kotlin-scripting-jvm-host")
     implementation("org.jetbrains.kotlin:kotlin-script-runtime")
-
+    implementation("io.insert-koin:koin-core:3.5.0")
+    implementation("io.insert-koin:koin-compose:1.1.0")
 
     testImplementation(kotlin("test"))
 }

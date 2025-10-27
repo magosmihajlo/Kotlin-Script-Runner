@@ -22,30 +22,45 @@ class ScriptExecutionViewModel(
 
     private val maxOutputLines = 1000
 
-    fun updateScriptContent(content: String) {
-        _state.update { it.copy(scriptContent = content) }
-    }
-
     fun navigateToLine(line: Int, column: Int) {
+        println("navigateToLine called: line=$line, column=$column")
         val lines = _state.value.scriptContent.lines()
         if (line > 0 && line <= lines.size) {
             val targetLineIndex = line - 1
             val offset = lines.take(targetLineIndex).sumOf { it.length + 1 } + (column - 1).coerceAtLeast(0)
 
-            _state.update {
-                it.copy(
+            println("Calculated offset: $offset")
+            println("Total text length: ${_state.value.scriptContent.length}")
+
+            _state.update { currentState ->
+                currentState.copy(
                     textFieldValue = TextFieldValue(
-                        text = it.scriptContent,
+                        text = currentState.scriptContent,
                         selection = TextRange(offset)
-                    ),
-                    cursorPosition = offset
+                    )
                 )
             }
+
+            println("State updated! Current textFieldValue selection: ${_state.value.textFieldValue.selection}")
+        } else {
+            println("Line out of bounds: $line (total lines: ${lines.size})")
         }
     }
 
     fun executeScript() {
         if (_state.value.isRunning) return
+
+        val content = _state.value.scriptContent.trim()
+        if (content.isEmpty()) {
+            _state.update {
+                it.copy(
+                    error = "Cannot execute empty script",
+                    status = ExecutionStatus.FAILED,
+                    exitCode = -1
+                )
+            }
+            return
+        }
 
         _state.update {
             it.copy(
@@ -120,8 +135,14 @@ class ScriptExecutionViewModel(
                 output = emptyList(),
                 exitCode = null,
                 error = null,
-                status = ExecutionStatus.IDLE
+                status = ExecutionStatus.IDLE,
             )
+        }
+    }
+
+    fun updateTextFieldValue(value: TextFieldValue) {
+        _state.update {
+            it.copy(textFieldValue = value)
         }
     }
 }

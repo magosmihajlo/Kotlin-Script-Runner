@@ -9,9 +9,10 @@ import java.nio.charset.StandardCharsets
 class TempScriptFileManager : ScriptFileManager {
 
     override suspend fun createTempScriptFile(content: String): File = withContext(Dispatchers.IO) {
-        val tempFile = File.createTempFile("script_", ".kts")
-        tempFile.writeText(content, StandardCharsets.UTF_8)
-        tempFile
+        val tempDir = createTempDir("kotlin_exec_", "")
+        val scriptFile = File(tempDir, "Main.kts")
+        scriptFile.writeText(content, StandardCharsets.UTF_8)
+        scriptFile
     }
 
     override suspend fun cleanup(file: File): Unit = withContext(Dispatchers.IO) {

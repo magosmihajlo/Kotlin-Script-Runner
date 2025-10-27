@@ -2,19 +2,19 @@ package presentation
 
 import domain.model.OutputLine
 import domain.model.ExecutionStatus
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 
 data class ScriptExecutionState(
-    val scriptContent: String = DEFAULT_SCRIPT,
     val textFieldValue: TextFieldValue = TextFieldValue(DEFAULT_SCRIPT),
     val output: List<OutputLine> = emptyList(),
     val status: ExecutionStatus = ExecutionStatus.IDLE,
     val exitCode: Int? = null,
     val error: String? = null,
-    val isRunning: Boolean = false,
-    val cursorPosition: Int? = null
+    val isRunning: Boolean = false
 ) {
+    val scriptContent: String
+        get() = textFieldValue.text
+
     val hasError: Boolean
         get() = exitCode != null && exitCode != 0
 
@@ -29,14 +29,14 @@ data class ScriptExecutionState(
     companion object {
         private const val DEFAULT_SCRIPT = """println("Hello, Kotlin!")
 
-            for (i in 1..5) {
-                println("Count: ${'$'}i")
-                Thread.sleep(500)
-            }
-            
-            println("Done!")"""
-        }
+for (i in 1..5) {
+    println("Count: ${'$'}i")
+    Thread.sleep(500)
+}
+
+println("Done!")"""
     }
+}
 
 enum class StatusColor {
     IDLE,
