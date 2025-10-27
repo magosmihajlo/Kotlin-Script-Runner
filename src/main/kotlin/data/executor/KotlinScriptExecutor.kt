@@ -37,12 +37,16 @@ class KotlinScriptExecutor(
 
             onOutputLine(OutputLine("Compiling...", OutputType.SYSTEM))
 
+            val stdlibPath = "C:\\Program Files\\Kotlin\\kotlinc\\lib\\kotlin-stdlib.jar"
+
             val compileBuilder = ProcessBuilder(
                 kotlinc,
                 sourceFile.absolutePath,
-                "-include-runtime",
                 "-d",
-                jarFile.absolutePath
+                jarFile.absolutePath,
+                "-classpath",
+                stdlibPath,
+                "-include-runtime"
             )
             compileBuilder.redirectErrorStream(false)
 
