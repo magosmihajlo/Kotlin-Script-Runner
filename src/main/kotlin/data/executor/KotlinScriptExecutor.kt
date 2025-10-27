@@ -9,8 +9,6 @@ import domain.repository.ScriptFileManager
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.File
-import java.util.Locale
-import java.util.Locale.getDefault
 
 class KotlinScriptExecutor(
     private val fileManager: ScriptFileManager
@@ -23,21 +21,60 @@ class KotlinScriptExecutor(
         scriptContent: String,
         onOutputLine: suspend (OutputLine) -> Unit
     ): ExecutionResult = withContext(Dispatchers.IO) {
-        val scriptFile = fileManager.createTempScriptFile(scriptContent)
+
+        val properKotlinCode = buildProperKotlinFile(scriptContent)
+
+        val tempDir = createTempDir("kotlin_exec_", "")
+        val sourceFile = File(tempDir, "Main.kt")
+        sourceFile.writeText(properKotlinCode)
+
+        val jarFile = File(tempDir, "output.jar")
 
         try {
-            val osName = System.getProperty("os.name").lowercase(getDefault())
+            val osName = System.getProperty("os.name").lowercase()
             val isWindows = osName.contains("win")
+            val kotlinc = if (isWindows) "kotlinc.bat" else "kotlinc"
 
-            val command = if (isWindows) "kotlinc.bat" else "kotlinc"
+            onOutputLine(OutputLine("Compiling...", OutputType.SYSTEM))
 
-            val processBuilder = ProcessBuilder(
-                command,
-                "-script",
-                scriptFile.absolutePath
+            val compileBuilder = ProcessBuilder(
+                kotlinc,
+                sourceFile.absolutePath,
+                "-include-runtime",
+                "-d",
+                jarFile.absolutePath
             )
+            compileBuilder.redirectErrorStream(false)
 
-            currentProcess = processBuilder.start()
+            val compileProcess = compileBuilder.start()
+
+            val compileErrors = mutableListOf<String>()
+            compileProcess.errorStream.bufferedReader().use { reader ->
+                reader.forEachLine { line ->
+                    compileErrors.add(line)
+                }
+            }
+
+            val compileExitCode = compileProcess.waitFor()
+
+            if (compileExitCode != 0) {
+                tempDir.deleteRecursively()
+                onOutputLine(OutputLine("Compilation failed", OutputType.SYSTEM))
+                compileErrors.forEach {
+                    onOutputLine(OutputLine(it, OutputType.STDERR))
+                }
+                return@withContext ExecutionResult.Failure(
+                    ScriptError("Compilation failed"),
+                    compileErrors.map { OutputLine(it, OutputType.STDERR) }
+                )
+            }
+
+            onOutputLine(OutputLine("Running...", OutputType.SYSTEM))
+
+            val runBuilder = ProcessBuilder("java", "-jar", jarFile.absolutePath)
+            runBuilder.redirectErrorStream(false)
+
+            currentProcess = runBuilder.start()
             val process = currentProcess ?: throw IllegalStateException("Process failed to start")
 
             val outputLines = mutableListOf<OutputLine>()
@@ -60,7 +97,7 @@ class KotlinScriptExecutor(
 
             val exitCode = process.waitFor()
 
-            fileManager.cleanup(scriptFile)
+            tempDir.deleteRecursively()
 
             if (exitCode == 0) {
                 ExecutionResult.Success(exitCode, outputLines)
@@ -70,10 +107,10 @@ class KotlinScriptExecutor(
             }
         } catch (e: CancellationException) {
             currentProcess?.destroyForcibly()
-            fileManager.cleanup(scriptFile)
+            tempDir.deleteRecursively()
             ExecutionResult.Cancelled
         } catch (e: Exception) {
-            fileManager.cleanup(scriptFile)
+            tempDir.deleteRecursively()
             ExecutionResult.Failure(
                 ScriptError("Execution error: ${e.message}"),
                 emptyList()
@@ -81,6 +118,20 @@ class KotlinScriptExecutor(
         } finally {
             currentProcess = null
             executionJob = null
+        }
+    }
+
+    private fun buildProperKotlinFile(userCode: String): String {
+        val trimmed = userCode.trim()
+
+        return if (trimmed.contains("fun main")) {
+            trimmed
+        } else {
+            """
+            fun main(args: Array<String>) {
+                $trimmed
+            }
+            """.trimIndent()
         }
     }
 
