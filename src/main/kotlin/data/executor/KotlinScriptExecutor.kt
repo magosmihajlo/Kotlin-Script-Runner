@@ -22,61 +22,23 @@ class KotlinScriptExecutor(
         onOutputLine: suspend (OutputLine) -> Unit
     ): ExecutionResult = withContext(Dispatchers.IO) {
 
-        val properKotlinCode = buildProperKotlinFile(scriptContent)
-
         val tempDir = createTempDir("kotlin_exec_", "")
-        val sourceFile = File(tempDir, "Main.kt")
-        sourceFile.writeText(properKotlinCode)
-
-        val jarFile = File(tempDir, "output.jar")
+        val scriptFile = File(tempDir, "Main.kts")
+        scriptFile.writeText(scriptContent)
 
         try {
             val osName = System.getProperty("os.name").lowercase()
             val isWindows = osName.contains("win")
             val kotlinc = if (isWindows) "kotlinc.bat" else "kotlinc"
 
-            onOutputLine(OutputLine("Compiling...", OutputType.SYSTEM))
+            onOutputLine(OutputLine("Running script...", OutputType.SYSTEM))
 
-            val stdlibPath = "C:\\Program Files\\Kotlin\\kotlinc\\lib\\kotlin-stdlib.jar"
-
-            val compileBuilder = ProcessBuilder(
+            val runBuilder = ProcessBuilder(
                 kotlinc,
-                sourceFile.absolutePath,
-                "-d",
-                jarFile.absolutePath,
-                "-classpath",
-                stdlibPath,
-                "-include-runtime"
+                "-script",
+                scriptFile.absolutePath
             )
-            compileBuilder.redirectErrorStream(false)
-
-            val compileProcess = compileBuilder.start()
-
-            val compileErrors = mutableListOf<String>()
-            compileProcess.errorStream.bufferedReader().use { reader ->
-                reader.forEachLine { line ->
-                    compileErrors.add(line)
-                }
-            }
-
-            val compileExitCode = compileProcess.waitFor()
-
-            if (compileExitCode != 0) {
-                tempDir.deleteRecursively()
-                onOutputLine(OutputLine("Compilation failed", OutputType.SYSTEM))
-                compileErrors.forEach {
-                    onOutputLine(OutputLine(it, OutputType.STDERR))
-                }
-                return@withContext ExecutionResult.Failure(
-                    ScriptError("Compilation failed"),
-                    compileErrors.map { OutputLine(it, OutputType.STDERR) }
-                )
-            }
-
-            onOutputLine(OutputLine("Running...", OutputType.SYSTEM))
-
-            val runBuilder = ProcessBuilder("java", "-jar", jarFile.absolutePath)
-            runBuilder.redirectErrorStream(false)
+            runBuilder.redirectErrorStream(true)
 
             currentProcess = runBuilder.start()
             val process = currentProcess ?: throw IllegalStateException("Process failed to start")
@@ -84,23 +46,14 @@ class KotlinScriptExecutor(
             val outputLines = mutableListOf<OutputLine>()
 
             executionJob = launch {
-                launch {
-                    process.inputStream.bufferedReader().use { reader ->
-                        readStream(reader, OutputType.STDOUT, onOutputLine, outputLines)
-                    }
-                }
-
-                launch {
-                    process.errorStream.bufferedReader().use { reader ->
-                        readStream(reader, OutputType.STDERR, onOutputLine, outputLines)
-                    }
+                process.inputStream.bufferedReader().use { reader ->
+                    readStream(reader, OutputType.STDOUT, onOutputLine, outputLines)
                 }
             }
 
             executionJob?.join()
 
             val exitCode = process.waitFor()
-
             tempDir.deleteRecursively()
 
             if (exitCode == 0) {
@@ -109,6 +62,8 @@ class KotlinScriptExecutor(
                 val error = parseError(outputLines)
                 ExecutionResult.Failure(error, outputLines)
             }
+
+
         } catch (e: CancellationException) {
             currentProcess?.destroyForcibly()
             tempDir.deleteRecursively()
@@ -122,20 +77,6 @@ class KotlinScriptExecutor(
         } finally {
             currentProcess = null
             executionJob = null
-        }
-    }
-
-    private fun buildProperKotlinFile(userCode: String): String {
-        val trimmed = userCode.trim()
-
-        return if (trimmed.contains("fun main")) {
-            trimmed
-        } else {
-            """
-            fun main(args: Array<String>) {
-                $trimmed
-            }
-            """.trimIndent()
         }
     }
 
