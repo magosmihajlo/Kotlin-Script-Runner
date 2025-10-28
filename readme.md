@@ -10,57 +10,101 @@ in this document in the Known Limitations section. I would love to fix this issu
 
 ## Features
 
-- **Dual-pane interface** - Code editor and output display side-by-side
-- **Real-time execution** - Live output streaming as scripts run
-- **Syntax highlighting** - Keywords, strings, and comments colored
-- **Error navigation** - Click errors to jump to the exact location
-- **Process management** - Start, stop, and monitor script execution
-- **Visual indicators** - Status dots show idle/running/success/failed states
-- **Memory safe** - Output limited to 1000 lines
+### Core Functionality
+- 🖥️ **Dual-pane interface** - Code editor and output display side-by-side
+- ⚡ **Real-time execution** - Live output streaming as scripts run
+- 🎨 **Syntax highlighting** - Keywords, strings, and comments colored
+- 🎯 **Error detection** - Clickable error messages with line/column information (cursor navigation in progress)
+- 🛑 **Process management** - Start, stop, and monitor script execution
+
+### User Experience
+- 📊 **Visual indicators** - Status dots show idle/running/success/failed states
+- 💾 **Memory safe** - Output limited to 1000 lines
+- 🌙 **Dark theme** - Easy on the eyes for long coding sessions
+- ⌨️ **Responsive UI** - Non-blocking execution keeps interface smooth
 
 ## Architecture
 
 Clean Architecture with four layers:
 ```
-UI (Compose) → Presentation (ViewModel) → Domain (Use Cases) → Data (Executors)
+┌─────────────────────────────────────────────────┐
+│                UI Layer (Compose)               │
+│  • MainScreen    • CodeEditor    • OutputPanel  │
+└────────────────────┬────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────┐
+│          Presentation Layer (MVVM)              │
+│  • ScriptExecutionViewModel                     │
+│  • ScriptExecutionState                         │
+└────────────────────┬────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────┐
+│           Domain Layer (Business Logic)         │
+│  • ExecuteScriptUseCase                         │
+│  • ScriptExecutor (interface)                   │
+│  • ScriptFileManager (interface)                │
+└────────────────────┬────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────┐
+│           Data Layer (Implementation)           │
+│  • KotlinScriptExecutor                         │
+│  • TempScriptFileManager                        │
+└─────────────────────────────────────────────────┘
 ```
 
 **Why Clean Architecture?**
-- Testable business logic isolated from UI
-- Framework-independent domain layer
-- Easy to modify and extend
-- Industry best practice
+- ✅ Testable business logic isolated from UI
+- ✅ Framework-independent domain layer
+- ✅ Easy to modify and extend
+- ✅ Industry best practice for maintainable code
 
-## Technology Stack
+## 🛠️ Technology Stack
 
-- **Kotlin** - Modern JVM language
-- **Compose Desktop** - Declarative UI framework
-- **Material3** - Design system
-- **Coroutines** - Async operations
+| Technology                                                                                           | Version | Purpose                  |
+|------------------------------------------------------------------------------------------------------|---------|--------------------------|
+| ![Kotlin](https://img.shields.io/badge/-Kotlin-7F52FF?logo=kotlin&logoColor=white)                   | 2.1.0   | Modern JVM language      |
+| ![Compose](https://img.shields.io/badge/-Compose_Desktop-4285F4?logo=jetpackcompose&logoColor=white) | 1.7.3   | Declarative UI framework |
+| ![Material3](https://img.shields.io/badge/-Material_3-757575?logo=material-design&logoColor=white)   | Latest  | Design system            |
+| ![Coroutines](https://img.shields.io/badge/-Coroutines-7F52FF?logo=kotlin&logoColor=white)           | 1.10.2  | Async operations         |
+
+**Additional Libraries:**
 - **StateFlow** - Reactive state management
+- **kotlinc** - Script compilation and execution
 
-## Prerequisites
+## 📦 Prerequisites
 
 ### Required Software
 
-1. **JDK 17+** (JDK 21 recommended)
-    - Download: https://adoptium.net/
-    - Verify: `java -version`
+### Required Software
 
-2. **Kotlin Compiler** (`kotlinc`)
+#### 1. ☕ JDK 17+ (JDK 21 recommended)
+- **Download:** [Adoptium](https://adoptium.net/)
+- **Verify:**
+```bash
+  java -version
+  # Should show: openjdk version "21.0.x" or higher
+```
+
+#### 2. 🔧 Kotlin Compiler (`kotlinc`)
     - Windows: `choco install kotlin` (Requires choco. Not recommended, see below)
     - macOS: `brew install kotlin` (Requires brew)
     - Linux: `snap install --classic kotlin`
     - Verify: `kotlinc -version`
 
-3. **Git**
+#### 3. 📚 Git
     - Verify: `git --version`
 
-### Recommended Software for Kotlin
-    - Download latest version of Kotlin and unzip it in a path without spaces
-      manually add it to PATH and everything should work
+### 🔍 Recommended Setup for Kotlin
 
-### Verify kotlinc Works
+For the most reliable installation:
+1. Download the latest Kotlin compiler from [GitHub Releases](https://github.com/JetBrains/kotlin/releases)
+2. Extract to a path **without spaces** (e.g., `C:\kotlin` or `/usr/local/kotlin`)
+3. Add the `bin` directory to your system PATH
+4. Restart your terminal/IDE
+
+**Important:** Paths with spaces can cause issues with script execution.
+
+### ✅ Verify kotlinc Works
 ```bash
 echo 'println("Test")' > test.kts
 kotlinc -script test.kts
@@ -68,9 +112,9 @@ kotlinc -script test.kts
 rm test.kts
 ```
 
-**This test MUST work for the application to function.**
+**⚠️ This test MUST work for the application to function.**
 
-## Installation
+## 🚀 Installation
 ```bash
 # Clone repository
 git clone https://github.com/magosmihajlo/Kotlin-Script-Runner
@@ -85,16 +129,16 @@ cd kotlin-script-runner
 
 **Windows:** Use `gradlew.bat` instead of `./gradlew`
 
-## Usage
+## 📖 Usage
 
 ### Basic Workflow
 
-1. Write Kotlin script in left editor pane
-2. Click "Run" button
-3. Watch real-time output in the right pane
-4. Click underlined errors to jump to location
-5. Click "Stop" to cancel long-running scripts
-6. Click "Clear" to reset the output
+1. ✍️ Write Kotlin script in left editor pane
+2. ▶️ Click "Run" button
+3. 👀 Watch real-time output in the right pane
+4. 🎯 Click underlined errors to jump to location
+5. 🛑 Click "Stop" to cancel long-running scripts
+6. 🧹 Click "Clear" to reset the output
 
 ### Example: Hello World
 ```kotlin
@@ -122,92 +166,91 @@ println("Line 4")
 
 ### Status Indicators
 
-| Indicator        | Meaning                     |
-|------------------|-----------------------------|
-| Gray dot         | Idle - Ready to execute     |
-| Blue pulsing dot | Running - Script executing  |
-| Green dot        | Success - Exit code 0       |
-| Red dot          | Failed - Non-zero exit code |
+| Indicator           | Meaning                     |
+|---------------------|-----------------------------|
+| ⚪ Gray              | Idle - Ready to execute     |
+| 🔵 Blue pulsing dot | Running - Script executing  |
+| 🟢 Green dot        | Success - Exit code 0       |
+| 🔴 Red dot          | Failed - Non-zero exit code |
 
-## Project Structure
+## 📂 Project Structure
 ```
 src/main/kotlin/
-├── Main.kt                          # Entry point
+├── Main.kt                          # Application entry point
 ├── di/
-│   └── AppModule.kt                 # Dependency injection
-├── domain/                          # Business logic
+│   └── AppModule.kt                 # 🆕 Koin dependency injection setup
+├── domain/                          # 🎯 Business logic layer
 │   ├── model/
-│   │   ├── ScriptExecution.kt       # Execution state
-│   │   └── ScriptError.kt           # Error models
+│   │   ├── ScriptExecution.kt       # Execution state models
+│   │   └── ScriptError.kt           # Error data models
 │   ├── repository/
 │   │   ├── ScriptExecutor.kt        # Executor interface
 │   │   └── ScriptFileManager.kt     # File manager interface
 │   └── usecase/
-│       └── ExecuteScriptUseCase.kt  # Execution workflow
-├── data/                            # Implementations
+│       └── ExecuteScriptUseCase.kt  # Orchestrates execution workflow
+├── data/                            # 💾 Implementation layer
 │   ├── executor/
-│   │   └── KotlinScriptExecutor.kt  # Process execution
+│   │   └── KotlinScriptExecutor.kt  # Process execution & stream handling
 │   └── file/
-│       └── TempScriptFileManager.kt # File operations
-├── presentation/                    # State management
+│       └── TempScriptFileManager.kt # Temporary file operations
+├── presentation/                    # 🎭 State management layer
 │   ├── ScriptExecutionState.kt      # UI state model
-│   └── ScriptExecutionViewModel.kt  # State coordinator
-└── ui/                              # User interface
+│   └── ScriptExecutionViewModel.kt  # State coordinator & event handler
+└── ui/                              # 🎨 User interface layer
     ├── theme/
-    │   ├── Theme.kt                 # Colors
+    │   ├── Theme.kt                 # Color schemes
     │   └── Typography.kt            # Text styles
     ├── components/
-    │   ├── CodeEditor.kt            # Code input
-    │   ├── OutputPanel.kt           # Output display
-    │   ├── StatusIndicator.kt       # Status visualization
+    │   ├── CodeEditor.kt            # Code input with syntax highlighting
+    │   ├── OutputPanel.kt           # Output display with error links
+    │   ├── StatusIndicator.kt       # Visual status indicators
     │   ├── ControlBar.kt            # Action buttons
-    │   ├── SyntaxHighlighter.kt     # Syntax coloring
-    │   └── SyntaxHighlightTransformation.kt
+    │   ├── SyntaxHighlighter.kt     # Syntax coloring engine
+    │   └── SyntaxHighlightTransformation.kt  # Visual transformation
     └── screens/
-        └── MainScreen.kt            # Main layout
+        └── MainScreen.kt            # Main application layout
 ```
 
-## How It Works
+## ⚙️ How It Works
 
-### Script Execution Flow
-
-1. User writes code in the editor
-2. User clicks "Run" button
-3. ViewModel receives action
-4. Use case creates temporary `.kts` file
-5. Use case spawns `kotlinc -script` process
-6. Separate coroutines read stdout and stderr
-7. Each line emitted to ViewModel
-8. ViewModel updates StateFlow
-9. UI recomposes with new output
-10. Process completes, exit code captured
-11. Temporary files cleaned up
-12. Status updated to success/failed
+**Key Steps:**
+1. 📝 User writes code in the editor
+2. ▶️ User clicks "Run" button
+3. 📨 ViewModel receives action
+4. 📄 Use case creates temporary `.kts` file
+5. 🚀 Use case spawns `kotlinc -script` process
+6. 🔄 Separate coroutines read stdout and stderr
+7. 📤 Each line emitted to ViewModel
+8. 🔄 ViewModel updates StateFlow
+9. 🎨 UI recomposes with new output
+10. ✅ Process completes, exit code captured
+11. 🧹 Temporary files cleaned up
+12. 📊 Status updated to success/failed
 
 ### Syntax Highlighting
 
-- Custom tokenizer parses character-by-character
-- Recognizes keywords, strings, comments
-- Applies colors via AnnotatedString
-- Uses VisualTransformation for non-intrusive rendering
-- O(n) complexity, faster than regex
+- 🔍 Custom tokenizer parses character-by-character
+- 🎯 Recognizes keywords, strings, comments
+- 🎨 Applies colors via AnnotatedString
+- 🖼️ Uses VisualTransformation for non-intrusive rendering
+- ⚡ O(n) complexity - more efficient than regex
 
 ### Error Navigation
 
-- Parses kotlinc error format: `file:line:column: error: message`
-- Extracts line and column numbers with regex
-- Calculates character offset from line/column
-- Updates TextFieldValue selection to move the cursor
-- Underlines clickable errors
+- 📋 Parses kotlinc error format: `file:line:column: error: message`
+- 🔢 Extracts line and column numbers with regex
+- 🧮 Calculates character offset from line/column
+- 🎯 Updates TextFieldValue selection to move cursor
+- 🖱️ Underlines clickable errors
 
 ### Memory Management
 
-- Output limited to 1000 lines
-- Older lines dropped as new ones arrive
-- LazyColumn virtualizes rendering
-- Prevents OutOfMemoryError on infinite output
+- 📉 Output limited to 1000 lines
+- 🗑️ Older lines dropped as new ones arrive
+- 📜 LazyColumn virtualizes rendering
+- 🛡️ Prevents OutOfMemoryError on infinite output
 
-## Design Decisions
+##  🎯 Design Decisions
 
 ### Why Clean Architecture?
 
@@ -216,10 +259,11 @@ src/main/kotlin/
 **Solution:** Separate into layers with dependency inversion.
 
 **Benefits:**
-- Domain layer has zero dependencies (pure Kotlin)
-- Easy to test with mocks
-- Can swap UI frameworks without touching business logic
-- Changes isolated to a single layer
+- 🧪 Domain layer has zero dependencies (pure Kotlin)
+- ✅ Easy to test with mocks
+- 🔄 Can swap UI frameworks without touching business logic
+- 🎯 Changes isolated to a single layer
+- 📚 Follows SOLID principles
 
 ### Why MVVM?
 
@@ -228,10 +272,11 @@ src/main/kotlin/
 **Solution:** ViewModel coordinates state, UI is a pure function of state.
 
 **Benefits:**
-- Single source of truth (StateFlow)
-- Unidirectional data flow
-- Trivial to test ViewModel
-- UI automatically updates on state changes
+- 📊 Single source of truth (StateFlow)
+- ➡️ Unidirectional data flow
+- 🧪 Trivial to test ViewModel
+- 🔄 UI automatically updates on state changes
+- 🐛 Easier debugging with clear state transitions
 
 ### Why Coroutines?
 
@@ -240,10 +285,11 @@ src/main/kotlin/
 **Solution:** Async execution with coroutines.
 
 **Benefits:**
-- Non-blocking I/O keeps UI responsive
-- Structured concurrency ensures cleanup
-- Easy cancellation support
-- No callback hell
+- ⚡ Non-blocking I/O keeps UI responsive
+- 🏗️ Structured concurrency ensures cleanup
+- 🛑 Easy cancellation support
+- 🚫 No callback hell
+- 🧵 Efficient thread usage
 
 ### Why Compose Desktop?
 
@@ -252,24 +298,27 @@ src/main/kotlin/
 **Solution:** Declarative UI with Compose.
 
 **Benefits:**
-- UI = function of state
-- Less boilerplate
-- Smart recomposition (only changed parts update)
-- Directly relevant to JetBrains Compose Multiplatform work
+- 🎨 UI = function of state
+- 📝 Less boilerplate
+- ⚡ Smart recomposition (only changed parts update)
+- 🎯 Directly relevant to JetBrains Compose Multiplatform work
+- 🔮 Future-proof technology
+- 
+## 🎨 Design Patterns Used
 
-## Design Patterns Used
+| Pattern                     | Implementation           | Purpose                       |
+|-----------------------------|--------------------------|-------------------------------|
+| 🏗️ **Clean Architecture**  | Layered separation       | Maintainability & testability |
+| 🎭 **MVVM**                 | ViewModel + StateFlow    | State management              |
+| 📚 **Repository**           | ScriptExecutor interface | Abstract implementation       |
+| 🎯 **Use Case**             | ExecuteScriptUseCase     | Encapsulate workflow          |
+| 👀 **Observer**             | StateFlow                | Reactive updates              |
+| 🔀 **Strategy**             | Interface-based executor | Flexible implementation       |
+| 💉 **Dependency Injection** | Manual DI module         | Decouple dependencies         |
 
-1. **Clean Architecture** - Layered separation of concerns
-2. **MVVM** - Model-View-ViewModel for state management
-3. **Repository Pattern** - ScriptExecutor interface abstracts implementation
-4. **Use Case Pattern** - ExecuteScriptUseCase encapsulates workflow
-5. **Observer Pattern** - StateFlow for reactive updates
-6. **Strategy Pattern** - Interface-based executor implementation
-7. **Dependency Injection** - Manual DI container (AppModule)
+## 🐛 Troubleshooting
 
-## Troubleshooting
-
-### kotlinc not found
+### ❌ kotlinc not found
 
 **Symptom:** "Cannot run program kotlinc"
 
@@ -279,7 +328,7 @@ src/main/kotlin/
 - Windows: Restart terminal after installation
 - Try full path: `C:\kotlinc\bin\kotlinc.bat`
 
-### Compilation failed with the unresolved reference 'println'
+### ⚠️ Compilation failed with the unresolved reference 'println'
 
 **Symptom:** Script won't compile
 
@@ -289,7 +338,7 @@ src/main/kotlin/
 - If genuine issue, reinstall kotlinc
 - Changing to a path without spaces helped me fix this and a lot of other issues
 
-### Application won't start
+###  🚫 Application won't start
 
 **Symptom:** Window doesn't open
 
@@ -299,7 +348,7 @@ src/main/kotlin/
 - Try: `./gradlew clean build run`
 - Check JAVA_HOME is set correctly
 
-### Syntax highlighting is not visible
+### 🎨 Syntax highlighting is not visible
 
 **Symptom:** All text the same color
 
@@ -308,7 +357,7 @@ src/main/kotlin/
 - Check theme colors defined in Theme.kt
 - Try typing `fun` - should turn orange
 
-### Error navigation doesn't work
+### 🎯  Error navigation doesn't work
 
 **Symptom:** Clicking error does nothing
 
@@ -326,7 +375,7 @@ src/main/kotlin/
 - **Coroutine efficiency:** Non-blocking I/O, structured concurrency
 - **Memory cleanup:** Temporary files deleted immediately after execution
 
-## Known Limitations
+## ⚠️ Known Limitations
 
 ### Error Navigation
 Error navigation is partially implemented. The application detects and underlines error lines in the output, and clicking them triggers the navigation logic (visible in console logs). However, due to technical limitations with Compose Desktop's `BasicTextField` cursor management and state synchronization, the cursor does not visually jump to the error location. This is a known issue with bidirectional data flow in Compose's text field implementation.
@@ -344,19 +393,27 @@ Error navigation is partially implemented. The application detects and underline
 
 **Future fix:** This could be resolved by using a custom text editor component or waiting for Compose Desktop text field improvements in future releases.
 
-## Future Enhancements
+## 🔮 Future Enhancements
 
-- [ ] Error navigation fully completed
-- [ ] Script save/load functionality
-- [ ] Execution history tracking
-- [ ] Multiple script tabs
-- [ ] Customizable themes and fonts
-- [ ] Line numbers in the editor
-- [ ] Search and replace
-- [ ] Keyboard shortcuts (Ctrl+R, Ctrl+K, Ctrl+S)
-- [ ] Auto-completion
-- [ ] Integrated debugger
-- [ ] Performance metrics
+### High Priority
+- [ ] ✅ Complete error navigation implementation
+- [ ] 💾 Script save/load functionality
+- [ ] 📝 Execution history tracking
+- [ ] 📑 Multiple script tabs
+
+### Medium Priority
+- [ ] 🎨 Customizable themes and fonts
+- [ ] 🔢 Line numbers in the editor
+- [ ] 🔍 Search and replace functionality
+- [ ] ⌨️ Keyboard shortcuts (Ctrl+R, Ctrl+K, Ctrl+S)
+
+### Low Priority
+- [ ] 💡 Auto-completion suggestions
+- [ ] 🐛 Integrated debugger
+- [ ] 📊 Performance metrics dashboard
+- [ ] 📤 Export output to file
+- [ ] 🌐 Remote script execution
+- [ ] 📦 Script templates library
 
 ## License
 
@@ -371,8 +428,6 @@ This project demonstrates:
 - Process management and concurrency
 - Professional code organization
 - IDE tooling development capabilities
-
-**For interview:** Prepared to explain any architectural decision, design pattern, or implementation detail.
 
 ---
 

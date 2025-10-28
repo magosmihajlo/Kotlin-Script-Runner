@@ -11,12 +11,14 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 class KotlinScriptExecutor(
     private val fileManager: ScriptFileManager
 ) : ScriptExecutor {
-
+    @Volatile
     private var currentProcess: Process? = null
+    @Volatile
     private var executionJob: Job? = null
     private var currentTempDir: File? = null
 
@@ -56,11 +58,12 @@ class KotlinScriptExecutor(
             }
 
             executionJob?.join()
-            val exitCode = process.waitFor()
+            val exitCode = withTimeout(5.minutes.inWholeMilliseconds) {
+                process.waitFor()
+            }
 
-            // Cleanup using fileManager
             fileManager.cleanup(scriptFile)
-            currentTempDir?.deleteRecursively()
+            scriptFile.parentFile?.deleteRecursively()
 
             if (exitCode == 0) {
                 ExecutionResult.Success(exitCode, outputLines)
@@ -78,8 +81,14 @@ class KotlinScriptExecutor(
             )
 
         } catch (e: CancellationException) {
-            currentProcess?.destroyForcibly()
-            scriptFile.parentFile.deleteRecursively()
+            try {
+                currentProcess?.destroyForcibly()
+                currentProcess?.waitFor(1, TimeUnit.SECONDS)
+                fileManager.cleanup(scriptFile)
+                scriptFile.parentFile?.deleteRecursively()
+            } catch (cleanupError: Exception) {
+                // TODO: Log cleanup failure
+            }
             ExecutionResult.Cancelled
         } catch (e: Exception) {
             scriptFile.parentFile.deleteRecursively()

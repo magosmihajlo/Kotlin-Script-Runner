@@ -1,7 +1,6 @@
 package presentation
 
 import domain.model.ExecutionStatus
-import domain.model.OutputLine
 import domain.model.ExecutionResult
 import domain.usecase.ExecuteScriptUseCase
 import kotlinx.coroutines.*
@@ -34,8 +33,7 @@ class ScriptExecutionViewModel(
 
             _state.update { currentState ->
                 currentState.copy(
-                    textFieldValue = TextFieldValue(
-                        text = currentState.scriptContent,
+                    textFieldValue = currentState.textFieldValue.copy(
                         selection = TextRange(offset)
                     )
                 )
