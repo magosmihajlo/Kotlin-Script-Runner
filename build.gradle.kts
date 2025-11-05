@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "2.1.0"
     id("org.jetbrains.compose") version "1.7.3"
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
+    jacoco
 }
 
 group = "com.kotlinscriptrunner"
@@ -30,6 +31,11 @@ dependencies {
     implementation("io.insert-koin:koin-compose:1.1.0")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("app.cash.turbine:turbine:1.0.0")
+
 }
 
 compose.desktop {
@@ -44,8 +50,19 @@ compose.desktop {
     }
 }
 
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco"))
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+
 }
 
 kotlin {
