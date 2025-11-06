@@ -75,8 +75,6 @@ Clean Architecture with four layers:
 
 ### Required Software
 
-### Required Software
-
 #### 1. ☕ JDK 17+ (JDK 21 recommended)
 - **Download:** [Adoptium](https://adoptium.net/)
 - **Verify:**
@@ -392,6 +390,39 @@ Error navigation is partially implemented. The application detects and underline
 **Workaround:** Users can manually navigate to the line and column numbers displayed in the error message.
 
 **Future fix:** This could be resolved by using a custom text editor component or waiting for Compose Desktop text field improvements in future releases.
+
+## 🧪 Testing
+
+This project includes comprehensive unit tests covering all layers of the Clean Architecture.
+
+### Test Coverage
+
+- **Domain Layer:** Model classes, use cases, and business logic
+- **Data Layer:** File management and operations
+- **Presentation Layer:** ViewModel and state management
+
+### Running Tests
+```bash
+# Run all tests
+./gradlew test
+
+# Run with coverage report
+./gradlew test jacocoTestReport
+
+# View HTML test report
+open build/reports/tests/test/index.html
+
+# View coverage report (after running jacocoTestReport)
+open build/reports/jacoco/index.html
+```
+
+### Testing Technologies
+
+- **JUnit 5** - Test framework
+- **MockK** - Mocking library for Kotlin
+- **Turbine** - Flow testing utilities
+- **Coroutines Test** - Async testing support
+- **JaCoCo** - Code coverage reporting
 
 ## 🔮 Future Enhancements
 
